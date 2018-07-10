@@ -1,0 +1,15 @@
+{
+  "name": "YouTube",
+  "version": "1.0.0",
+  "description": "Youtube application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^2.0.0",
+    "electron-builder": "^20.19.2"
+  }
+}

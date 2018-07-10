@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Youtube</title>
+        <link rel="stylesheet" href="./assets/styles/app.css">
+    </head>
+
+    <body>
+        <div id="container"></div>
+
+        <script type="text/html" id="form-template">
+            <div class="form">
+                <div class="logo"></div>
+                <input id="link" class="link-input" type="text" placeholder="Video link">
+            </div>
+        </script>
+
+        <script type="text/html" id="iframe-teplate">
+            <div class="video-container">
+                <iframe id="embedded-video" width="100%" height="100%" src="https://www.youtube.com/embed/{videoId}?showinfo=0" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </script>
+
+        <script type="text/javascript" src="./assets/scripts/template.js"></script>
+        <script type="text/javascript" src="./assets/scripts/utils.js"></script>
+        <script type="text/javascript" src="./assets/scripts/view.js"></script>
+
+        <script>
+            const container = document.getElementById('container');
+            let view = View.render(Template.generate('form-template'), container);
+
+            const onInputKeyUp = (event) => {
+                if(event.keyCode === 13) {
+                    const videoId = Utils.parseVideoId(event.target.value);
+                    if(videoId) {
+                        document.getElementById('link').removeEventListener('keyup', onInputKeyUp);
+                        View.render(Template.generate('iframe-teplate', {videoId}), container);
+                    }
+                }
+            };
+
+            document.getElementById('link').addEventListener('keyup', onInputKeyUp);
+        </script>
+
+    </body>
+</html>
