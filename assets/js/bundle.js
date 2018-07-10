@@ -1,706 +1,4 @@
 /******/ (function(modules) { // webpackBootstrap
-/******/ 	function hotDisposeChunk(chunkId) {
-/******/ 		delete installedChunks[chunkId];
-/******/ 	}
-/******/ 	var parentHotUpdateCallback = window["webpackHotUpdate"];
-/******/ 	window["webpackHotUpdate"] = // eslint-disable-next-line no-unused-vars
-/******/ 	function webpackHotUpdateCallback(chunkId, moreModules) {
-/******/ 		hotAddUpdateChunk(chunkId, moreModules);
-/******/ 		if (parentHotUpdateCallback) parentHotUpdateCallback(chunkId, moreModules);
-/******/ 	} ;
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotDownloadUpdateChunk(chunkId) {
-/******/ 		var head = document.getElementsByTagName("head")[0];
-/******/ 		var script = document.createElement("script");
-/******/ 		script.charset = "utf-8";
-/******/ 		script.src = __webpack_require__.p + "" + chunkId + "." + hotCurrentHash + ".hot-update.js";
-/******/ 		;
-/******/ 		head.appendChild(script);
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotDownloadManifest(requestTimeout) {
-/******/ 		requestTimeout = requestTimeout || 10000;
-/******/ 		return new Promise(function(resolve, reject) {
-/******/ 			if (typeof XMLHttpRequest === "undefined") {
-/******/ 				return reject(new Error("No browser support"));
-/******/ 			}
-/******/ 			try {
-/******/ 				var request = new XMLHttpRequest();
-/******/ 				var requestPath = __webpack_require__.p + "" + hotCurrentHash + ".hot-update.json";
-/******/ 				request.open("GET", requestPath, true);
-/******/ 				request.timeout = requestTimeout;
-/******/ 				request.send(null);
-/******/ 			} catch (err) {
-/******/ 				return reject(err);
-/******/ 			}
-/******/ 			request.onreadystatechange = function() {
-/******/ 				if (request.readyState !== 4) return;
-/******/ 				if (request.status === 0) {
-/******/ 					// timeout
-/******/ 					reject(
-/******/ 						new Error("Manifest request to " + requestPath + " timed out.")
-/******/ 					);
-/******/ 				} else if (request.status === 404) {
-/******/ 					// no update available
-/******/ 					resolve();
-/******/ 				} else if (request.status !== 200 && request.status !== 304) {
-/******/ 					// other failure
-/******/ 					reject(new Error("Manifest request to " + requestPath + " failed."));
-/******/ 				} else {
-/******/ 					// success
-/******/ 					try {
-/******/ 						var update = JSON.parse(request.responseText);
-/******/ 					} catch (e) {
-/******/ 						reject(e);
-/******/ 						return;
-/******/ 					}
-/******/ 					resolve(update);
-/******/ 				}
-/******/ 			};
-/******/ 		});
-/******/ 	}
-/******/
-/******/ 	var hotApplyOnUpdate = true;
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "032c278405c7e272e82b";
-/******/ 	var hotRequestTimeout = 10000;
-/******/ 	var hotCurrentModuleData = {};
-/******/ 	var hotCurrentChildModule;
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentParents = [];
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentParentsTemp = [];
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotCreateRequire(moduleId) {
-/******/ 		var me = installedModules[moduleId];
-/******/ 		if (!me) return __webpack_require__;
-/******/ 		var fn = function(request) {
-/******/ 			if (me.hot.active) {
-/******/ 				if (installedModules[request]) {
-/******/ 					if (installedModules[request].parents.indexOf(moduleId) === -1) {
-/******/ 						installedModules[request].parents.push(moduleId);
-/******/ 					}
-/******/ 				} else {
-/******/ 					hotCurrentParents = [moduleId];
-/******/ 					hotCurrentChildModule = request;
-/******/ 				}
-/******/ 				if (me.children.indexOf(request) === -1) {
-/******/ 					me.children.push(request);
-/******/ 				}
-/******/ 			} else {
-/******/ 				console.warn(
-/******/ 					"[HMR] unexpected require(" +
-/******/ 						request +
-/******/ 						") from disposed module " +
-/******/ 						moduleId
-/******/ 				);
-/******/ 				hotCurrentParents = [];
-/******/ 			}
-/******/ 			return __webpack_require__(request);
-/******/ 		};
-/******/ 		var ObjectFactory = function ObjectFactory(name) {
-/******/ 			return {
-/******/ 				configurable: true,
-/******/ 				enumerable: true,
-/******/ 				get: function() {
-/******/ 					return __webpack_require__[name];
-/******/ 				},
-/******/ 				set: function(value) {
-/******/ 					__webpack_require__[name] = value;
-/******/ 				}
-/******/ 			};
-/******/ 		};
-/******/ 		for (var name in __webpack_require__) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(__webpack_require__, name) &&
-/******/ 				name !== "e" &&
-/******/ 				name !== "t"
-/******/ 			) {
-/******/ 				Object.defineProperty(fn, name, ObjectFactory(name));
-/******/ 			}
-/******/ 		}
-/******/ 		fn.e = function(chunkId) {
-/******/ 			if (hotStatus === "ready") hotSetStatus("prepare");
-/******/ 			hotChunksLoading++;
-/******/ 			return __webpack_require__.e(chunkId).then(finishChunkLoading, function(err) {
-/******/ 				finishChunkLoading();
-/******/ 				throw err;
-/******/ 			});
-/******/
-/******/ 			function finishChunkLoading() {
-/******/ 				hotChunksLoading--;
-/******/ 				if (hotStatus === "prepare") {
-/******/ 					if (!hotWaitingFilesMap[chunkId]) {
-/******/ 						hotEnsureUpdateChunk(chunkId);
-/******/ 					}
-/******/ 					if (hotChunksLoading === 0 && hotWaitingFiles === 0) {
-/******/ 						hotUpdateDownloaded();
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 		fn.t = function(value, mode) {
-/******/ 			if (mode & 1) value = fn(value);
-/******/ 			return __webpack_require__.t(value, mode & ~1);
-/******/ 		};
-/******/ 		return fn;
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotCreateModule(moduleId) {
-/******/ 		var hot = {
-/******/ 			// private stuff
-/******/ 			_acceptedDependencies: {},
-/******/ 			_declinedDependencies: {},
-/******/ 			_selfAccepted: false,
-/******/ 			_selfDeclined: false,
-/******/ 			_disposeHandlers: [],
-/******/ 			_main: hotCurrentChildModule !== moduleId,
-/******/
-/******/ 			// Module API
-/******/ 			active: true,
-/******/ 			accept: function(dep, callback) {
-/******/ 				if (typeof dep === "undefined") hot._selfAccepted = true;
-/******/ 				else if (typeof dep === "function") hot._selfAccepted = dep;
-/******/ 				else if (typeof dep === "object")
-/******/ 					for (var i = 0; i < dep.length; i++)
-/******/ 						hot._acceptedDependencies[dep[i]] = callback || function() {};
-/******/ 				else hot._acceptedDependencies[dep] = callback || function() {};
-/******/ 			},
-/******/ 			decline: function(dep) {
-/******/ 				if (typeof dep === "undefined") hot._selfDeclined = true;
-/******/ 				else if (typeof dep === "object")
-/******/ 					for (var i = 0; i < dep.length; i++)
-/******/ 						hot._declinedDependencies[dep[i]] = true;
-/******/ 				else hot._declinedDependencies[dep] = true;
-/******/ 			},
-/******/ 			dispose: function(callback) {
-/******/ 				hot._disposeHandlers.push(callback);
-/******/ 			},
-/******/ 			addDisposeHandler: function(callback) {
-/******/ 				hot._disposeHandlers.push(callback);
-/******/ 			},
-/******/ 			removeDisposeHandler: function(callback) {
-/******/ 				var idx = hot._disposeHandlers.indexOf(callback);
-/******/ 				if (idx >= 0) hot._disposeHandlers.splice(idx, 1);
-/******/ 			},
-/******/
-/******/ 			// Management API
-/******/ 			check: hotCheck,
-/******/ 			apply: hotApply,
-/******/ 			status: function(l) {
-/******/ 				if (!l) return hotStatus;
-/******/ 				hotStatusHandlers.push(l);
-/******/ 			},
-/******/ 			addStatusHandler: function(l) {
-/******/ 				hotStatusHandlers.push(l);
-/******/ 			},
-/******/ 			removeStatusHandler: function(l) {
-/******/ 				var idx = hotStatusHandlers.indexOf(l);
-/******/ 				if (idx >= 0) hotStatusHandlers.splice(idx, 1);
-/******/ 			},
-/******/
-/******/ 			//inherit from previous dispose call
-/******/ 			data: hotCurrentModuleData[moduleId]
-/******/ 		};
-/******/ 		hotCurrentChildModule = undefined;
-/******/ 		return hot;
-/******/ 	}
-/******/
-/******/ 	var hotStatusHandlers = [];
-/******/ 	var hotStatus = "idle";
-/******/
-/******/ 	function hotSetStatus(newStatus) {
-/******/ 		hotStatus = newStatus;
-/******/ 		for (var i = 0; i < hotStatusHandlers.length; i++)
-/******/ 			hotStatusHandlers[i].call(null, newStatus);
-/******/ 	}
-/******/
-/******/ 	// while downloading
-/******/ 	var hotWaitingFiles = 0;
-/******/ 	var hotChunksLoading = 0;
-/******/ 	var hotWaitingFilesMap = {};
-/******/ 	var hotRequestedFilesMap = {};
-/******/ 	var hotAvailableFilesMap = {};
-/******/ 	var hotDeferred;
-/******/
-/******/ 	// The update info
-/******/ 	var hotUpdate, hotUpdateNewHash;
-/******/
-/******/ 	function toModuleId(id) {
-/******/ 		var isNumber = +id + "" === id;
-/******/ 		return isNumber ? +id : id;
-/******/ 	}
-/******/
-/******/ 	function hotCheck(apply) {
-/******/ 		if (hotStatus !== "idle") {
-/******/ 			throw new Error("check() is only allowed in idle status");
-/******/ 		}
-/******/ 		hotApplyOnUpdate = apply;
-/******/ 		hotSetStatus("check");
-/******/ 		return hotDownloadManifest(hotRequestTimeout).then(function(update) {
-/******/ 			if (!update) {
-/******/ 				hotSetStatus("idle");
-/******/ 				return null;
-/******/ 			}
-/******/ 			hotRequestedFilesMap = {};
-/******/ 			hotWaitingFilesMap = {};
-/******/ 			hotAvailableFilesMap = update.c;
-/******/ 			hotUpdateNewHash = update.h;
-/******/
-/******/ 			hotSetStatus("prepare");
-/******/ 			var promise = new Promise(function(resolve, reject) {
-/******/ 				hotDeferred = {
-/******/ 					resolve: resolve,
-/******/ 					reject: reject
-/******/ 				};
-/******/ 			});
-/******/ 			hotUpdate = {};
-/******/ 			var chunkId = "main";
-/******/ 			// eslint-disable-next-line no-lone-blocks
-/******/ 			{
-/******/ 				/*globals chunkId */
-/******/ 				hotEnsureUpdateChunk(chunkId);
-/******/ 			}
-/******/ 			if (
-/******/ 				hotStatus === "prepare" &&
-/******/ 				hotChunksLoading === 0 &&
-/******/ 				hotWaitingFiles === 0
-/******/ 			) {
-/******/ 				hotUpdateDownloaded();
-/******/ 			}
-/******/ 			return promise;
-/******/ 		});
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotAddUpdateChunk(chunkId, moreModules) {
-/******/ 		if (!hotAvailableFilesMap[chunkId] || !hotRequestedFilesMap[chunkId])
-/******/ 			return;
-/******/ 		hotRequestedFilesMap[chunkId] = false;
-/******/ 		for (var moduleId in moreModules) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(moreModules, moduleId)) {
-/******/ 				hotUpdate[moduleId] = moreModules[moduleId];
-/******/ 			}
-/******/ 		}
-/******/ 		if (--hotWaitingFiles === 0 && hotChunksLoading === 0) {
-/******/ 			hotUpdateDownloaded();
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotEnsureUpdateChunk(chunkId) {
-/******/ 		if (!hotAvailableFilesMap[chunkId]) {
-/******/ 			hotWaitingFilesMap[chunkId] = true;
-/******/ 		} else {
-/******/ 			hotRequestedFilesMap[chunkId] = true;
-/******/ 			hotWaitingFiles++;
-/******/ 			hotDownloadUpdateChunk(chunkId);
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotUpdateDownloaded() {
-/******/ 		hotSetStatus("ready");
-/******/ 		var deferred = hotDeferred;
-/******/ 		hotDeferred = null;
-/******/ 		if (!deferred) return;
-/******/ 		if (hotApplyOnUpdate) {
-/******/ 			// Wrap deferred object in Promise to mark it as a well-handled Promise to
-/******/ 			// avoid triggering uncaught exception warning in Chrome.
-/******/ 			// See https://bugs.chromium.org/p/chromium/issues/detail?id=465666
-/******/ 			Promise.resolve()
-/******/ 				.then(function() {
-/******/ 					return hotApply(hotApplyOnUpdate);
-/******/ 				})
-/******/ 				.then(
-/******/ 					function(result) {
-/******/ 						deferred.resolve(result);
-/******/ 					},
-/******/ 					function(err) {
-/******/ 						deferred.reject(err);
-/******/ 					}
-/******/ 				);
-/******/ 		} else {
-/******/ 			var outdatedModules = [];
-/******/ 			for (var id in hotUpdate) {
-/******/ 				if (Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
-/******/ 					outdatedModules.push(toModuleId(id));
-/******/ 				}
-/******/ 			}
-/******/ 			deferred.resolve(outdatedModules);
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotApply(options) {
-/******/ 		if (hotStatus !== "ready")
-/******/ 			throw new Error("apply() is only allowed in ready status");
-/******/ 		options = options || {};
-/******/
-/******/ 		var cb;
-/******/ 		var i;
-/******/ 		var j;
-/******/ 		var module;
-/******/ 		var moduleId;
-/******/
-/******/ 		function getAffectedStuff(updateModuleId) {
-/******/ 			var outdatedModules = [updateModuleId];
-/******/ 			var outdatedDependencies = {};
-/******/
-/******/ 			var queue = outdatedModules.slice().map(function(id) {
-/******/ 				return {
-/******/ 					chain: [id],
-/******/ 					id: id
-/******/ 				};
-/******/ 			});
-/******/ 			while (queue.length > 0) {
-/******/ 				var queueItem = queue.pop();
-/******/ 				var moduleId = queueItem.id;
-/******/ 				var chain = queueItem.chain;
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (!module || module.hot._selfAccepted) continue;
-/******/ 				if (module.hot._selfDeclined) {
-/******/ 					return {
-/******/ 						type: "self-declined",
-/******/ 						chain: chain,
-/******/ 						moduleId: moduleId
-/******/ 					};
-/******/ 				}
-/******/ 				if (module.hot._main) {
-/******/ 					return {
-/******/ 						type: "unaccepted",
-/******/ 						chain: chain,
-/******/ 						moduleId: moduleId
-/******/ 					};
-/******/ 				}
-/******/ 				for (var i = 0; i < module.parents.length; i++) {
-/******/ 					var parentId = module.parents[i];
-/******/ 					var parent = installedModules[parentId];
-/******/ 					if (!parent) continue;
-/******/ 					if (parent.hot._declinedDependencies[moduleId]) {
-/******/ 						return {
-/******/ 							type: "declined",
-/******/ 							chain: chain.concat([parentId]),
-/******/ 							moduleId: moduleId,
-/******/ 							parentId: parentId
-/******/ 						};
-/******/ 					}
-/******/ 					if (outdatedModules.indexOf(parentId) !== -1) continue;
-/******/ 					if (parent.hot._acceptedDependencies[moduleId]) {
-/******/ 						if (!outdatedDependencies[parentId])
-/******/ 							outdatedDependencies[parentId] = [];
-/******/ 						addAllToSet(outdatedDependencies[parentId], [moduleId]);
-/******/ 						continue;
-/******/ 					}
-/******/ 					delete outdatedDependencies[parentId];
-/******/ 					outdatedModules.push(parentId);
-/******/ 					queue.push({
-/******/ 						chain: chain.concat([parentId]),
-/******/ 						id: parentId
-/******/ 					});
-/******/ 				}
-/******/ 			}
-/******/
-/******/ 			return {
-/******/ 				type: "accepted",
-/******/ 				moduleId: updateModuleId,
-/******/ 				outdatedModules: outdatedModules,
-/******/ 				outdatedDependencies: outdatedDependencies
-/******/ 			};
-/******/ 		}
-/******/
-/******/ 		function addAllToSet(a, b) {
-/******/ 			for (var i = 0; i < b.length; i++) {
-/******/ 				var item = b[i];
-/******/ 				if (a.indexOf(item) === -1) a.push(item);
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// at begin all updates modules are outdated
-/******/ 		// the "outdated" status can propagate to parents if they don't accept the children
-/******/ 		var outdatedDependencies = {};
-/******/ 		var outdatedModules = [];
-/******/ 		var appliedUpdate = {};
-/******/
-/******/ 		var warnUnexpectedRequire = function warnUnexpectedRequire() {
-/******/ 			console.warn(
-/******/ 				"[HMR] unexpected require(" + result.moduleId + ") to disposed module"
-/******/ 			);
-/******/ 		};
-/******/
-/******/ 		for (var id in hotUpdate) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
-/******/ 				moduleId = toModuleId(id);
-/******/ 				/** @type {TODO} */
-/******/ 				var result;
-/******/ 				if (hotUpdate[id]) {
-/******/ 					result = getAffectedStuff(moduleId);
-/******/ 				} else {
-/******/ 					result = {
-/******/ 						type: "disposed",
-/******/ 						moduleId: id
-/******/ 					};
-/******/ 				}
-/******/ 				/** @type {Error|false} */
-/******/ 				var abortError = false;
-/******/ 				var doApply = false;
-/******/ 				var doDispose = false;
-/******/ 				var chainInfo = "";
-/******/ 				if (result.chain) {
-/******/ 					chainInfo = "\nUpdate propagation: " + result.chain.join(" -> ");
-/******/ 				}
-/******/ 				switch (result.type) {
-/******/ 					case "self-declined":
-/******/ 						if (options.onDeclined) options.onDeclined(result);
-/******/ 						if (!options.ignoreDeclined)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because of self decline: " +
-/******/ 									result.moduleId +
-/******/ 									chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "declined":
-/******/ 						if (options.onDeclined) options.onDeclined(result);
-/******/ 						if (!options.ignoreDeclined)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because of declined dependency: " +
-/******/ 									result.moduleId +
-/******/ 									" in " +
-/******/ 									result.parentId +
-/******/ 									chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "unaccepted":
-/******/ 						if (options.onUnaccepted) options.onUnaccepted(result);
-/******/ 						if (!options.ignoreUnaccepted)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because " + moduleId + " is not accepted" + chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "accepted":
-/******/ 						if (options.onAccepted) options.onAccepted(result);
-/******/ 						doApply = true;
-/******/ 						break;
-/******/ 					case "disposed":
-/******/ 						if (options.onDisposed) options.onDisposed(result);
-/******/ 						doDispose = true;
-/******/ 						break;
-/******/ 					default:
-/******/ 						throw new Error("Unexception type " + result.type);
-/******/ 				}
-/******/ 				if (abortError) {
-/******/ 					hotSetStatus("abort");
-/******/ 					return Promise.reject(abortError);
-/******/ 				}
-/******/ 				if (doApply) {
-/******/ 					appliedUpdate[moduleId] = hotUpdate[moduleId];
-/******/ 					addAllToSet(outdatedModules, result.outdatedModules);
-/******/ 					for (moduleId in result.outdatedDependencies) {
-/******/ 						if (
-/******/ 							Object.prototype.hasOwnProperty.call(
-/******/ 								result.outdatedDependencies,
-/******/ 								moduleId
-/******/ 							)
-/******/ 						) {
-/******/ 							if (!outdatedDependencies[moduleId])
-/******/ 								outdatedDependencies[moduleId] = [];
-/******/ 							addAllToSet(
-/******/ 								outdatedDependencies[moduleId],
-/******/ 								result.outdatedDependencies[moduleId]
-/******/ 							);
-/******/ 						}
-/******/ 					}
-/******/ 				}
-/******/ 				if (doDispose) {
-/******/ 					addAllToSet(outdatedModules, [result.moduleId]);
-/******/ 					appliedUpdate[moduleId] = warnUnexpectedRequire;
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Store self accepted outdated modules to require them later by the module system
-/******/ 		var outdatedSelfAcceptedModules = [];
-/******/ 		for (i = 0; i < outdatedModules.length; i++) {
-/******/ 			moduleId = outdatedModules[i];
-/******/ 			if (
-/******/ 				installedModules[moduleId] &&
-/******/ 				installedModules[moduleId].hot._selfAccepted
-/******/ 			)
-/******/ 				outdatedSelfAcceptedModules.push({
-/******/ 					module: moduleId,
-/******/ 					errorHandler: installedModules[moduleId].hot._selfAccepted
-/******/ 				});
-/******/ 		}
-/******/
-/******/ 		// Now in "dispose" phase
-/******/ 		hotSetStatus("dispose");
-/******/ 		Object.keys(hotAvailableFilesMap).forEach(function(chunkId) {
-/******/ 			if (hotAvailableFilesMap[chunkId] === false) {
-/******/ 				hotDisposeChunk(chunkId);
-/******/ 			}
-/******/ 		});
-/******/
-/******/ 		var idx;
-/******/ 		var queue = outdatedModules.slice();
-/******/ 		while (queue.length > 0) {
-/******/ 			moduleId = queue.pop();
-/******/ 			module = installedModules[moduleId];
-/******/ 			if (!module) continue;
-/******/
-/******/ 			var data = {};
-/******/
-/******/ 			// Call dispose handlers
-/******/ 			var disposeHandlers = module.hot._disposeHandlers;
-/******/ 			for (j = 0; j < disposeHandlers.length; j++) {
-/******/ 				cb = disposeHandlers[j];
-/******/ 				cb(data);
-/******/ 			}
-/******/ 			hotCurrentModuleData[moduleId] = data;
-/******/
-/******/ 			// disable module (this disables requires from this module)
-/******/ 			module.hot.active = false;
-/******/
-/******/ 			// remove module from cache
-/******/ 			delete installedModules[moduleId];
-/******/
-/******/ 			// when disposing there is no need to call dispose handler
-/******/ 			delete outdatedDependencies[moduleId];
-/******/
-/******/ 			// remove "parents" references from all children
-/******/ 			for (j = 0; j < module.children.length; j++) {
-/******/ 				var child = installedModules[module.children[j]];
-/******/ 				if (!child) continue;
-/******/ 				idx = child.parents.indexOf(moduleId);
-/******/ 				if (idx >= 0) {
-/******/ 					child.parents.splice(idx, 1);
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// remove outdated dependency from module children
-/******/ 		var dependency;
-/******/ 		var moduleOutdatedDependencies;
-/******/ 		for (moduleId in outdatedDependencies) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)
-/******/ 			) {
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (module) {
-/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
-/******/ 					for (j = 0; j < moduleOutdatedDependencies.length; j++) {
-/******/ 						dependency = moduleOutdatedDependencies[j];
-/******/ 						idx = module.children.indexOf(dependency);
-/******/ 						if (idx >= 0) module.children.splice(idx, 1);
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Not in "apply" phase
-/******/ 		hotSetStatus("apply");
-/******/
-/******/ 		hotCurrentHash = hotUpdateNewHash;
-/******/
-/******/ 		// insert new code
-/******/ 		for (moduleId in appliedUpdate) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(appliedUpdate, moduleId)) {
-/******/ 				modules[moduleId] = appliedUpdate[moduleId];
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// call accept handlers
-/******/ 		var error = null;
-/******/ 		for (moduleId in outdatedDependencies) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)
-/******/ 			) {
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (module) {
-/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
-/******/ 					var callbacks = [];
-/******/ 					for (i = 0; i < moduleOutdatedDependencies.length; i++) {
-/******/ 						dependency = moduleOutdatedDependencies[i];
-/******/ 						cb = module.hot._acceptedDependencies[dependency];
-/******/ 						if (cb) {
-/******/ 							if (callbacks.indexOf(cb) !== -1) continue;
-/******/ 							callbacks.push(cb);
-/******/ 						}
-/******/ 					}
-/******/ 					for (i = 0; i < callbacks.length; i++) {
-/******/ 						cb = callbacks[i];
-/******/ 						try {
-/******/ 							cb(moduleOutdatedDependencies);
-/******/ 						} catch (err) {
-/******/ 							if (options.onErrored) {
-/******/ 								options.onErrored({
-/******/ 									type: "accept-errored",
-/******/ 									moduleId: moduleId,
-/******/ 									dependencyId: moduleOutdatedDependencies[i],
-/******/ 									error: err
-/******/ 								});
-/******/ 							}
-/******/ 							if (!options.ignoreErrored) {
-/******/ 								if (!error) error = err;
-/******/ 							}
-/******/ 						}
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Load self accepted modules
-/******/ 		for (i = 0; i < outdatedSelfAcceptedModules.length; i++) {
-/******/ 			var item = outdatedSelfAcceptedModules[i];
-/******/ 			moduleId = item.module;
-/******/ 			hotCurrentParents = [moduleId];
-/******/ 			try {
-/******/ 				__webpack_require__(moduleId);
-/******/ 			} catch (err) {
-/******/ 				if (typeof item.errorHandler === "function") {
-/******/ 					try {
-/******/ 						item.errorHandler(err);
-/******/ 					} catch (err2) {
-/******/ 						if (options.onErrored) {
-/******/ 							options.onErrored({
-/******/ 								type: "self-accept-error-handler-errored",
-/******/ 								moduleId: moduleId,
-/******/ 								error: err2,
-/******/ 								originalError: err
-/******/ 							});
-/******/ 						}
-/******/ 						if (!options.ignoreErrored) {
-/******/ 							if (!error) error = err2;
-/******/ 						}
-/******/ 						if (!error) error = err;
-/******/ 					}
-/******/ 				} else {
-/******/ 					if (options.onErrored) {
-/******/ 						options.onErrored({
-/******/ 							type: "self-accept-errored",
-/******/ 							moduleId: moduleId,
-/******/ 							error: err
-/******/ 						});
-/******/ 					}
-/******/ 					if (!options.ignoreErrored) {
-/******/ 						if (!error) error = err;
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// handle errors in accept handlers and self accepted module load
-/******/ 		if (error) {
-/******/ 			hotSetStatus("fail");
-/******/ 			return Promise.reject(error);
-/******/ 		}
-/******/
-/******/ 		hotSetStatus("idle");
-/******/ 		return new Promise(function(resolve) {
-/******/ 			resolve(outdatedModules);
-/******/ 		});
-/******/ 	}
-/******/
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -715,14 +13,11 @@
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
-/******/ 			exports: {},
-/******/ 			hot: hotCreateModule(moduleId),
-/******/ 			parents: (hotCurrentParentsTemp = hotCurrentParents, hotCurrentParents = [], hotCurrentParentsTemp),
-/******/ 			children: []
+/******/ 			exports: {}
 /******/ 		};
 /******/
 /******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, hotCreateRequire(moduleId));
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
@@ -784,24 +79,65 @@
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/
-/******/ 	// __webpack_hash__
-/******/ 	__webpack_require__.h = function() { return hotCurrentHash; };
-/******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return hotCreateRequire("./src/App.js")(__webpack_require__.s = "./src/App.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/App.js");
 /******/ })
 /************************************************************************/
 /******/ ({
 
+/***/ "./node_modules/classnames/index.js":
+/*!******************************************!*\
+  !*** ./node_modules/classnames/index.js ***!
+  \******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!\n  Copyright (c) 2017 Jed Watson.\n  Licensed under the MIT License (MIT), see\n  http://jedwatson.github.io/classnames\n*/\n/* global define */\n\n(function () {\n\t'use strict';\n\n\tvar hasOwn = {}.hasOwnProperty;\n\n\tfunction classNames () {\n\t\tvar classes = [];\n\n\t\tfor (var i = 0; i < arguments.length; i++) {\n\t\t\tvar arg = arguments[i];\n\t\t\tif (!arg) continue;\n\n\t\t\tvar argType = typeof arg;\n\n\t\t\tif (argType === 'string' || argType === 'number') {\n\t\t\t\tclasses.push(arg);\n\t\t\t} else if (Array.isArray(arg) && arg.length) {\n\t\t\t\tvar inner = classNames.apply(null, arg);\n\t\t\t\tif (inner) {\n\t\t\t\t\tclasses.push(inner);\n\t\t\t\t}\n\t\t\t} else if (argType === 'object') {\n\t\t\t\tfor (var key in arg) {\n\t\t\t\t\tif (hasOwn.call(arg, key) && arg[key]) {\n\t\t\t\t\t\tclasses.push(key);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\treturn classes.join(' ');\n\t}\n\n\tif (typeof module !== 'undefined' && module.exports) {\n\t\tclassNames.default = classNames;\n\t\tmodule.exports = classNames;\n\t} else if (true) {\n\t\t// register as 'classnames', consistent with npm package name\n\t\t!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function () {\n\t\t\treturn classNames;\n\t\t}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),\n\t\t\t\t__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));\n\t} else {}\n}());\n\n\n//# sourceURL=webpack:///./node_modules/classnames/index.js?");
+
+/***/ }),
+
 /***/ "./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/App.scss":
 /*!***************************************************************************************************!*\
-  !*** ./node_modules/css-loader??ref--5-1!./node_modules/sass-loader/lib/loader.js!./src/App.scss ***!
+  !*** ./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js!./src/App.scss ***!
   \***************************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("exports = module.exports = __webpack_require__(/*! ../node_modules/css-loader/lib/css-base.js */ \"./node_modules/css-loader/lib/css-base.js\")(true);\n// imports\n\n\n// module\nexports.push([module.i, \".App-app-2i {\\n  display: block; }\\n\", \"\", {\"version\":3,\"sources\":[\"/Users/eugeniu.marinescu/Projects/youtube/src/App.scss\"],\"names\":[],\"mappings\":\"AAAA;EACE,eAAe,EAAE\",\"file\":\"App.scss\",\"sourcesContent\":[\".app {\\n  display: block; }\\n\"],\"sourceRoot\":\"\"}]);\n\n// exports\nexports.locals = {\n\t\"app\": \"App-app-2i\"\n};\n\n//# sourceURL=webpack:///./src/App.scss?./node_modules/css-loader??ref--5-1!./node_modules/sass-loader/lib/loader.js");
+eval("exports = module.exports = __webpack_require__(/*! ../node_modules/css-loader/lib/css-base.js */ \"./node_modules/css-loader/lib/css-base.js\")(true);\n// imports\n\n\n// module\nexports.push([module.i, \".App-app-2i {\\n  display: flex;\\n  height: 100%;\\n  background-color: rgba(0, 0, 0, 0.4); }\\n  .App-app-2i:hover .App-sidebar-13 {\\n    width: 50px; }\\n\\n.App-sidebar-13 {\\n  width: 0;\\n  height: 100%;\\n  overflow: hidden;\\n  transition: 0.3s width;\\n  -webkit-app-region: drag;\\n  cursor: move; }\\n\\n.App-content-c2 {\\n  flex: 1;\\n  height: 100%;\\n  background-color: #fefefe;\\n  border-radius: 4px 0 0 4px; }\\n\", \"\", {\"version\":3,\"sources\":[\"/Users/muzikant/Projects/desktop-video-embedder/src/App.scss\"],\"names\":[],\"mappings\":\"AAAA;EACE,cAAc;EACd,aAAa;EACb,qCAAqC,EAAE;EACvC;IACE,YAAY,EAAE;;AAElB;EACE,SAAS;EACT,aAAa;EACb,iBAAiB;EACjB,uBAAuB;EACvB,yBAAyB;EACzB,aAAa,EAAE;;AAEjB;EACE,QAAQ;EACR,aAAa;EACb,0BAA0B;EAC1B,2BAA2B,EAAE\",\"file\":\"App.scss\",\"sourcesContent\":[\".app {\\n  display: flex;\\n  height: 100%;\\n  background-color: rgba(0, 0, 0, 0.4); }\\n  .app:hover .sidebar {\\n    width: 50px; }\\n\\n.sidebar {\\n  width: 0;\\n  height: 100%;\\n  overflow: hidden;\\n  transition: 0.3s width;\\n  -webkit-app-region: drag;\\n  cursor: move; }\\n\\n.content {\\n  flex: 1;\\n  height: 100%;\\n  background-color: #fefefe;\\n  border-radius: 4px 0 0 4px; }\\n\"],\"sourceRoot\":\"\"}]);\n\n// exports\nexports.locals = {\n\t\"app\": \"App-app-2i\",\n\t\"sidebar\": \"App-sidebar-13\",\n\t\"content\": \"App-content-c2\"\n};\n\n//# sourceURL=webpack:///./src/App.scss?./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js");
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/components/Input/Input.scss":
+/*!**********************************************************************************************************************!*\
+  !*** ./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js!./src/components/Input/Input.scss ***!
+  \**********************************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loader/lib/css-base.js */ \"./node_modules/css-loader/lib/css-base.js\")(true);\n// imports\n\n\n// module\nexports.push([module.i, \".Input-input-5v {\\n  font-size: 13px;\\n  border: 2px solid #dfdfdf;\\n  color: #555;\\n  outline: none;\\n  padding: 10px;\\n  width: 100%;\\n  height: 40px;\\n  box-sizing: border-box;\\n  transition: border-color 0.3s; }\\n  .Input-input-5v:focus, .Input-input-5v:hover {\\n    border-color: #ff0000; }\\n\", \"\", {\"version\":3,\"sources\":[\"/Users/muzikant/Projects/desktop-video-embedder/src/components/Input/Input.scss\"],\"names\":[],\"mappings\":\"AAAA;EACE,gBAAgB;EAChB,0BAA0B;EAC1B,YAAY;EACZ,cAAc;EACd,cAAc;EACd,YAAY;EACZ,aAAa;EACb,uBAAuB;EACvB,8BAA8B,EAAE;EAChC;IACE,sBAAsB,EAAE\",\"file\":\"Input.scss\",\"sourcesContent\":[\".input {\\n  font-size: 13px;\\n  border: 2px solid #dfdfdf;\\n  color: #555;\\n  outline: none;\\n  padding: 10px;\\n  width: 100%;\\n  height: 40px;\\n  box-sizing: border-box;\\n  transition: border-color 0.3s; }\\n  .input:focus, .input:hover {\\n    border-color: #ff0000; }\\n\"],\"sourceRoot\":\"\"}]);\n\n// exports\nexports.locals = {\n\t\"input\": \"Input-input-5v\"\n};\n\n//# sourceURL=webpack:///./src/components/Input/Input.scss?./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js");
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/components/Logo/Logo.scss":
+/*!********************************************************************************************************************!*\
+  !*** ./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js!./src/components/Logo/Logo.scss ***!
+  \********************************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("var escape = __webpack_require__(/*! ../../../node_modules/css-loader/lib/url/escape.js */ \"./node_modules/css-loader/lib/url/escape.js\");\nexports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loader/lib/css-base.js */ \"./node_modules/css-loader/lib/css-base.js\")(true);\n// imports\n\n\n// module\nexports.push([module.i, \".Logo-logo-35 {\\n  width: 148px;\\n  height: 40px;\\n  background-size: contain;\\n  background-repeat: no-repeat;\\n  background-position: center; }\\n  .Logo-logo-35.Logo-youtube-1R {\\n    background-image: url(\" + escape(__webpack_require__(/*! ./assets/youtube.svg */ \"./src/components/Logo/assets/youtube.svg\")) + \"); }\\n  .Logo-logo-35.Logo-vimeo-3U {\\n    background-image: url(\" + escape(__webpack_require__(/*! ./assets/vimeo.svg */ \"./src/components/Logo/assets/vimeo.svg\")) + \"); }\\n  .Logo-logo-35.Logo-youtube-dark-29 {\\n    background-image: url(\" + escape(__webpack_require__(/*! ./assets/youtube-dark.svg */ \"./src/components/Logo/assets/youtube-dark.svg\")) + \"); }\\n  .Logo-logo-35.Logo-vimeo-dark-3y {\\n    background-image: url(\" + escape(__webpack_require__(/*! ./assets/vimeo-dark.svg */ \"./src/components/Logo/assets/vimeo-dark.svg\")) + \"); }\\n  .Logo-logo-35.Logo-rutube-F_ {\\n    background-image: url(\" + escape(__webpack_require__(/*! ./assets/rutube.svg */ \"./src/components/Logo/assets/rutube.svg\")) + \"); }\\n  .Logo-logo-35.Logo-small-3H {\\n    width: 80px;\\n    height: 20px; }\\n\", \"\", {\"version\":3,\"sources\":[\"/Users/muzikant/Projects/desktop-video-embedder/src/components/Logo/Logo.scss\"],\"names\":[],\"mappings\":\"AAAA;EACE,aAAa;EACb,aAAa;EACb,yBAAyB;EACzB,6BAA6B;EAC7B,4BAA4B,EAAE;EAC9B;IACE,gDAA8C,EAAE;EAClD;IACE,gDAA4C,EAAE;EAChD;IACE,gDAAmD,EAAE;EACvD;IACE,gDAAiD,EAAE;EACrD;IACE,gDAA6C,EAAE;EACjD;IACE,YAAY;IACZ,aAAa,EAAE\",\"file\":\"Logo.scss\",\"sourcesContent\":[\".logo {\\n  width: 148px;\\n  height: 40px;\\n  background-size: contain;\\n  background-repeat: no-repeat;\\n  background-position: center; }\\n  .logo.youtube {\\n    background-image: url(\\\"./assets/youtube.svg\\\"); }\\n  .logo.vimeo {\\n    background-image: url(\\\"./assets/vimeo.svg\\\"); }\\n  .logo.youtube-dark {\\n    background-image: url(\\\"./assets/youtube-dark.svg\\\"); }\\n  .logo.vimeo-dark {\\n    background-image: url(\\\"./assets/vimeo-dark.svg\\\"); }\\n  .logo.rutube {\\n    background-image: url(\\\"./assets/rutube.svg\\\"); }\\n  .logo.small {\\n    width: 80px;\\n    height: 20px; }\\n\"],\"sourceRoot\":\"\"}]);\n\n// exports\nexports.locals = {\n\t\"logo\": \"Logo-logo-35\",\n\t\"youtube\": \"Logo-youtube-1R\",\n\t\"vimeo\": \"Logo-vimeo-3U\",\n\t\"youtube-dark\": \"Logo-youtube-dark-29\",\n\t\"vimeo-dark\": \"Logo-vimeo-dark-3y\",\n\t\"rutube\": \"Logo-rutube-F_\",\n\t\"small\": \"Logo-small-3H\"\n};\n\n//# sourceURL=webpack:///./src/components/Logo/Logo.scss?./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js");
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/views/Home/Home.scss":
+/*!***************************************************************************************************************!*\
+  !*** ./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js!./src/views/Home/Home.scss ***!
+  \***************************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loader/lib/css-base.js */ \"./node_modules/css-loader/lib/css-base.js\")(true);\n// imports\n\n\n// module\nexports.push([module.i, \".Home-home-view-1m {\\n  height: 100%;\\n  display: flex;\\n  align-items: center;\\n  justify-content: center;\\n  flex-direction: column; }\\n\\n.Home-input-3f {\\n  width: 70%; }\\n\\n.Home-logos-3H {\\n  display: flex; }\\n\\n.Home-logo-2d {\\n  margin: 0 5px 20px 5px;\\n  opacity: 0.4; }\\n\", \"\", {\"version\":3,\"sources\":[\"/Users/muzikant/Projects/desktop-video-embedder/src/views/Home/Home.scss\"],\"names\":[],\"mappings\":\"AAAA;EACE,aAAa;EACb,cAAc;EACd,oBAAoB;EACpB,wBAAwB;EACxB,uBAAuB,EAAE;;AAE3B;EACE,WAAW,EAAE;;AAEf;EACE,cAAc,EAAE;;AAElB;EACE,uBAAuB;EACvB,aAAa,EAAE\",\"file\":\"Home.scss\",\"sourcesContent\":[\".home-view {\\n  height: 100%;\\n  display: flex;\\n  align-items: center;\\n  justify-content: center;\\n  flex-direction: column; }\\n\\n.input {\\n  width: 70%; }\\n\\n.logos {\\n  display: flex; }\\n\\n.logo {\\n  margin: 0 5px 20px 5px;\\n  opacity: 0.4; }\\n\"],\"sourceRoot\":\"\"}]);\n\n// exports\nexports.locals = {\n\t\"home-view\": \"Home-home-view-1m\",\n\t\"input\": \"Home-input-3f\",\n\t\"logos\": \"Home-logos-3H\",\n\t\"logo\": \"Home-logo-2d\"\n};\n\n//# sourceURL=webpack:///./src/views/Home/Home.scss?./node_modules/css-loader??ref--6-1!./node_modules/sass-loader/lib/loader.js");
 
 /***/ }),
 
@@ -813,6 +149,17 @@ eval("exports = module.exports = __webpack_require__(/*! ../node_modules/css-loa
 /***/ (function(module, exports) {
 
 eval("/*\n\tMIT License http://www.opensource.org/licenses/mit-license.php\n\tAuthor Tobias Koppers @sokra\n*/\n// css base code, injected by the css-loader\nmodule.exports = function(useSourceMap) {\n\tvar list = [];\n\n\t// return the list of modules as css string\n\tlist.toString = function toString() {\n\t\treturn this.map(function (item) {\n\t\t\tvar content = cssWithMappingToString(item, useSourceMap);\n\t\t\tif(item[2]) {\n\t\t\t\treturn \"@media \" + item[2] + \"{\" + content + \"}\";\n\t\t\t} else {\n\t\t\t\treturn content;\n\t\t\t}\n\t\t}).join(\"\");\n\t};\n\n\t// import a list of modules into the list\n\tlist.i = function(modules, mediaQuery) {\n\t\tif(typeof modules === \"string\")\n\t\t\tmodules = [[null, modules, \"\"]];\n\t\tvar alreadyImportedModules = {};\n\t\tfor(var i = 0; i < this.length; i++) {\n\t\t\tvar id = this[i][0];\n\t\t\tif(typeof id === \"number\")\n\t\t\t\talreadyImportedModules[id] = true;\n\t\t}\n\t\tfor(i = 0; i < modules.length; i++) {\n\t\t\tvar item = modules[i];\n\t\t\t// skip already imported module\n\t\t\t// this implementation is not 100% perfect for weird media query combinations\n\t\t\t//  when a module is imported multiple times with different media queries.\n\t\t\t//  I hope this will never occur (Hey this way we have smaller bundles)\n\t\t\tif(typeof item[0] !== \"number\" || !alreadyImportedModules[item[0]]) {\n\t\t\t\tif(mediaQuery && !item[2]) {\n\t\t\t\t\titem[2] = mediaQuery;\n\t\t\t\t} else if(mediaQuery) {\n\t\t\t\t\titem[2] = \"(\" + item[2] + \") and (\" + mediaQuery + \")\";\n\t\t\t\t}\n\t\t\t\tlist.push(item);\n\t\t\t}\n\t\t}\n\t};\n\treturn list;\n};\n\nfunction cssWithMappingToString(item, useSourceMap) {\n\tvar content = item[1] || '';\n\tvar cssMapping = item[3];\n\tif (!cssMapping) {\n\t\treturn content;\n\t}\n\n\tif (useSourceMap && typeof btoa === 'function') {\n\t\tvar sourceMapping = toComment(cssMapping);\n\t\tvar sourceURLs = cssMapping.sources.map(function (source) {\n\t\t\treturn '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'\n\t\t});\n\n\t\treturn [content].concat(sourceURLs).concat([sourceMapping]).join('\\n');\n\t}\n\n\treturn [content].join('\\n');\n}\n\n// Adapted from convert-source-map (MIT)\nfunction toComment(sourceMap) {\n\t// eslint-disable-next-line no-undef\n\tvar base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));\n\tvar data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;\n\n\treturn '/*# ' + data + ' */';\n}\n\n\n//# sourceURL=webpack:///./node_modules/css-loader/lib/css-base.js?");
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/lib/url/escape.js":
+/*!***************************************************!*\
+  !*** ./node_modules/css-loader/lib/url/escape.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+eval("module.exports = function escape(url) {\n    if (typeof url !== 'string') {\n        return url\n    }\n    // If url is already wrapped in quotes, remove them\n    if (/^['\"].*['\"]$/.test(url)) {\n        url = url.slice(1, -1);\n    }\n    // Should url be wrapped?\n    // See https://drafts.csswg.org/css-values-3/#urls\n    if (/[\"'() \\t\\n]/.test(url)) {\n        return '\"' + url.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') + '\"'\n    }\n\n    return url\n}\n\n\n//# sourceURL=webpack:///./node_modules/css-loader/lib/url/escape.js?");
 
 /***/ }),
 
@@ -1020,6 +367,17 @@ eval("/**\n * Copyright (c) 2013-present, Facebook, Inc.\n *\n * This source cod
 
 /***/ }),
 
+/***/ "./node_modules/proptypes/index.js":
+/*!*****************************************!*\
+  !*** ./node_modules/proptypes/index.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function (global, factory) {\n  if (true) {\n    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [exports], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),\n\t\t\t\t__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?\n\t\t\t\t(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),\n\t\t\t\t__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));\n  } else { var mod; }\n})(this, function (exports) {\n  /**\n   * Copyright 2013-2015, Facebook, Inc.\n   * All rights reserved.\n   *\n   * This source code is licensed under the BSD-style license found in the\n   * LICENSE file in the root directory of this source tree. An additional grant\n   * of patent rights can be found in the PATENTS file in the same directory.\n   *\n   * @providesModule ReactPropTypes\n   */\n\n  'use strict';\n\n  // The Symbol used to tag the ReactElement type. If there is no native Symbol\n  // nor polyfill, then a plain number is used for performance.\n\n  exports.__esModule = true;\n\n  var _typeof = typeof Symbol === \"function\" && typeof Symbol.iterator === \"symbol\" ? function (obj) {\n    return typeof obj;\n  } : function (obj) {\n    return obj && typeof Symbol === \"function\" && obj.constructor === Symbol && obj !== Symbol.prototype ? \"symbol\" : typeof obj;\n  };\n\n  var REACT_ELEMENT_TYPE = typeof Symbol === 'function' && Symbol.for && Symbol.for('react.element') || 0xeac7;\n\n  var ReactElement = {};\n\n  /**\n   * @param {?object} object\n   * @return {boolean} True if `object` is a valid component.\n   * @final\n   */\n  ReactElement.isValidElement = function (object) {\n    return (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object' && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;\n  };\n\n  var ReactPropTypeLocationNames = {\n    prop: 'prop',\n    context: 'context',\n    childContext: 'child context'\n  };\n\n  var emptyFunction = {\n    thatReturns: function thatReturns(what) {\n      return function () {\n        return what;\n      };\n    }\n  };\n\n  var ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;\n  var FAUX_ITERATOR_SYMBOL = '@@iterator'; // Before Symbol spec.\n  function getIteratorFn(maybeIterable) {\n    var iteratorFn = maybeIterable && (ITERATOR_SYMBOL && maybeIterable[ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL]);\n    if (typeof iteratorFn === 'function') {\n      return iteratorFn;\n    }\n  }\n\n  /**\n   * Collection of methods that allow declaration and validation of props that are\n   * supplied to React components. Example usage:\n   *\n   *   var Props = require('ReactPropTypes');\n   *   var MyArticle = React.createClass({\n   *     propTypes: {\n   *       // An optional string prop named \"description\".\n   *       description: Props.string,\n   *\n   *       // A required enum prop named \"category\".\n   *       category: Props.oneOf(['News','Photos']).isRequired,\n   *\n   *       // A prop named \"dialog\" that requires an instance of Dialog.\n   *       dialog: Props.instanceOf(Dialog).isRequired\n   *     },\n   *     render: function() { ... }\n   *   });\n   *\n   * A more formal specification of how these methods are used:\n   *\n   *   type := array|bool|func|object|number|string|oneOf([...])|instanceOf(...)\n   *   decl := ReactPropTypes.{type}(.isRequired)?\n   *\n   * Each and every declaration produces a function with the same signature. This\n   * allows the creation of custom validation functions. For example:\n   *\n   *  var MyLink = React.createClass({\n   *    propTypes: {\n   *      // An optional string or URI prop named \"href\".\n   *      href: function(props, propName, componentName) {\n   *        var propValue = props[propName];\n   *        if (propValue != null && typeof propValue !== 'string' &&\n   *            !(propValue instanceof URI)) {\n   *          return new Error(\n   *            'Expected a string or an URI for ' + propName + ' in ' +\n   *            componentName\n   *          );\n   *        }\n   *      }\n   *    },\n   *    render: function() {...}\n   *  });\n   *\n   * @internal\n   */\n\n  var ANONYMOUS = '<<anonymous>>';\n\n  var ReactPropTypes = {\n    array: createPrimitiveTypeChecker('array'),\n    bool: createPrimitiveTypeChecker('boolean'),\n    func: createPrimitiveTypeChecker('function'),\n    number: createPrimitiveTypeChecker('number'),\n    object: createPrimitiveTypeChecker('object'),\n    string: createPrimitiveTypeChecker('string'),\n    symbol: createPrimitiveTypeChecker('symbol'),\n\n    any: createAnyTypeChecker(),\n    arrayOf: createArrayOfTypeChecker,\n    element: createElementTypeChecker(),\n    instanceOf: createInstanceTypeChecker,\n    node: createNodeChecker(),\n    objectOf: createObjectOfTypeChecker,\n    oneOf: createEnumTypeChecker,\n    oneOfType: createUnionTypeChecker,\n    shape: createShapeTypeChecker\n  };\n\n  function createChainableTypeChecker(validate) {\n    function checkType(isRequired, props, propName, componentName, location, propFullName) {\n      componentName = componentName || ANONYMOUS;\n      propFullName = propFullName || propName;\n      if (props[propName] == null) {\n        var locationName = ReactPropTypeLocationNames[location];\n        if (isRequired) {\n          return new Error('Required ' + locationName + ' `' + propFullName + '` was not specified in ' + ('`' + componentName + '`.'));\n        }\n        return null;\n      } else {\n        return validate(props, propName, componentName, location, propFullName);\n      }\n    }\n\n    var chainedCheckType = checkType.bind(null, false);\n    chainedCheckType.isRequired = checkType.bind(null, true);\n\n    return chainedCheckType;\n  }\n\n  function createPrimitiveTypeChecker(expectedType) {\n    function validate(props, propName, componentName, location, propFullName) {\n      var propValue = props[propName];\n      var propType = getPropType(propValue);\n      if (propType !== expectedType) {\n        var locationName = ReactPropTypeLocationNames[location];\n        // `propValue` being instance of, say, date/regexp, pass the 'object'\n        // check, but we can offer a more precise error message here rather than\n        // 'of type `object`'.\n        var preciseType = getPreciseType(propValue);\n\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` of type ' + ('`' + preciseType + '` supplied to `' + componentName + '`, expected ') + ('`' + expectedType + '`.'));\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createAnyTypeChecker() {\n    return createChainableTypeChecker(emptyFunction.thatReturns(null));\n  }\n\n  function createArrayOfTypeChecker(typeChecker) {\n    function validate(props, propName, componentName, location, propFullName) {\n      var propValue = props[propName];\n      if (!Array.isArray(propValue)) {\n        var locationName = ReactPropTypeLocationNames[location];\n        var propType = getPropType(propValue);\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an array.'));\n      }\n      for (var i = 0; i < propValue.length; i++) {\n        var error = typeChecker(propValue, i, componentName, location, propFullName + '[' + i + ']');\n        if (error instanceof Error) {\n          return error;\n        }\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createElementTypeChecker() {\n    function validate(props, propName, componentName, location, propFullName) {\n      if (!ReactElement.isValidElement(props[propName])) {\n        var locationName = ReactPropTypeLocationNames[location];\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`, expected a single ReactElement.'));\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createInstanceTypeChecker(expectedClass) {\n    function validate(props, propName, componentName, location, propFullName) {\n      if (!(props[propName] instanceof expectedClass)) {\n        var locationName = ReactPropTypeLocationNames[location];\n        var expectedClassName = expectedClass.name || ANONYMOUS;\n        var actualClassName = getClassName(props[propName]);\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` of type ' + ('`' + actualClassName + '` supplied to `' + componentName + '`, expected ') + ('instance of `' + expectedClassName + '`.'));\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createEnumTypeChecker(expectedValues) {\n    if (!Array.isArray(expectedValues)) {\n      return createChainableTypeChecker(function () {\n        return new Error('Invalid argument supplied to oneOf, expected an instance of array.');\n      });\n    }\n\n    function validate(props, propName, componentName, location, propFullName) {\n      var propValue = props[propName];\n      for (var i = 0; i < expectedValues.length; i++) {\n        if (propValue === expectedValues[i]) {\n          return null;\n        }\n      }\n\n      var locationName = ReactPropTypeLocationNames[location];\n      var valuesString = JSON.stringify(expectedValues);\n      return new Error('Invalid ' + locationName + ' `' + propFullName + '` of value `' + propValue + '` ' + ('supplied to `' + componentName + '`, expected one of ' + valuesString + '.'));\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createObjectOfTypeChecker(typeChecker) {\n    function validate(props, propName, componentName, location, propFullName) {\n      var propValue = props[propName];\n      var propType = getPropType(propValue);\n      if (propType !== 'object') {\n        var locationName = ReactPropTypeLocationNames[location];\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` of type ' + ('`' + propType + '` supplied to `' + componentName + '`, expected an object.'));\n      }\n      for (var key in propValue) {\n        if (propValue.hasOwnProperty(key)) {\n          var error = typeChecker(propValue, key, componentName, location, propFullName + '.' + key);\n          if (error instanceof Error) {\n            return error;\n          }\n        }\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createUnionTypeChecker(arrayOfTypeCheckers) {\n    if (!Array.isArray(arrayOfTypeCheckers)) {\n      return createChainableTypeChecker(function () {\n        return new Error('Invalid argument supplied to oneOfType, expected an instance of array.');\n      });\n    }\n\n    function validate(props, propName, componentName, location, propFullName) {\n      for (var i = 0; i < arrayOfTypeCheckers.length; i++) {\n        var checker = arrayOfTypeCheckers[i];\n        if (checker(props, propName, componentName, location, propFullName) == null) {\n          return null;\n        }\n      }\n\n      var locationName = ReactPropTypeLocationNames[location];\n      return new Error('Invalid ' + locationName + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`.'));\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createNodeChecker() {\n    function validate(props, propName, componentName, location, propFullName) {\n      if (!isNode(props[propName])) {\n        var locationName = ReactPropTypeLocationNames[location];\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` supplied to ' + ('`' + componentName + '`, expected a ReactNode.'));\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function createShapeTypeChecker(shapeTypes) {\n    function validate(props, propName, componentName, location, propFullName) {\n      var propValue = props[propName];\n      var propType = getPropType(propValue);\n      if (propType !== 'object') {\n        var locationName = ReactPropTypeLocationNames[location];\n        return new Error('Invalid ' + locationName + ' `' + propFullName + '` of type `' + propType + '` ' + ('supplied to `' + componentName + '`, expected `object`.'));\n      }\n      for (var key in shapeTypes) {\n        var checker = shapeTypes[key];\n        if (!checker) {\n          continue;\n        }\n        var error = checker(propValue, key, componentName, location, propFullName + '.' + key);\n        if (error) {\n          return error;\n        }\n      }\n      return null;\n    }\n    return createChainableTypeChecker(validate);\n  }\n\n  function isNode(propValue) {\n    switch (typeof propValue === 'undefined' ? 'undefined' : _typeof(propValue)) {\n      case 'number':\n      case 'string':\n      case 'undefined':\n        return true;\n      case 'boolean':\n        return !propValue;\n      case 'object':\n        if (Array.isArray(propValue)) {\n          return propValue.every(isNode);\n        }\n        if (propValue === null || ReactElement.isValidElement(propValue)) {\n          return true;\n        }\n\n        var iteratorFn = getIteratorFn(propValue);\n        if (iteratorFn) {\n          var iterator = iteratorFn.call(propValue);\n          var step;\n          if (iteratorFn !== propValue.entries) {\n            while (!(step = iterator.next()).done) {\n              if (!isNode(step.value)) {\n                return false;\n              }\n            }\n          } else {\n            // Iterator will provide entry [k,v] tuples rather than values.\n            while (!(step = iterator.next()).done) {\n              var entry = step.value;\n              if (entry) {\n                if (!isNode(entry[1])) {\n                  return false;\n                }\n              }\n            }\n          }\n        } else {\n          return false;\n        }\n\n        return true;\n      default:\n        return false;\n    }\n  }\n\n  function isSymbol(propType, propValue) {\n    // Native Symbol.\n    if (propType === 'symbol') {\n      return true;\n    }\n\n    // 19.4.3.5 Symbol.prototype[@@toStringTag] === 'Symbol'\n    if (propValue['@@toStringTag'] === 'Symbol') {\n      return true;\n    }\n\n    // Fallback for non-spec compliant Symbols which are polyfilled.\n    if (typeof Symbol === 'function' && propValue instanceof Symbol) {\n      return true;\n    }\n\n    return false;\n  }\n\n  // Equivalent of `typeof` but with special handling for array and regexp.\n  function getPropType(propValue) {\n    var propType = typeof propValue === 'undefined' ? 'undefined' : _typeof(propValue);\n    if (Array.isArray(propValue)) {\n      return 'array';\n    }\n    if (propValue instanceof RegExp) {\n      // Old webkits (at least until Android 4.0) return 'function' rather than\n      // 'object' for typeof a RegExp. We'll normalize this here so that /bla/\n      // passes PropTypes.object.\n      return 'object';\n    }\n    if (isSymbol(propType, propValue)) {\n      return 'symbol';\n    }\n    return propType;\n  }\n\n  // This handles more types than `getPropType`. Only used for error messages.\n  // See `createPrimitiveTypeChecker`.\n  function getPreciseType(propValue) {\n    var propType = getPropType(propValue);\n    if (propType === 'object') {\n      if (propValue instanceof Date) {\n        return 'date';\n      } else if (propValue instanceof RegExp) {\n        return 'regexp';\n      }\n    }\n    return propType;\n  }\n\n  // Returns class name of the object, if any.\n  function getClassName(propValue) {\n    if (!propValue.constructor || !propValue.constructor.name) {\n      return ANONYMOUS;\n    }\n    return propValue.constructor.name;\n  }\n\n  exports.default = ReactPropTypes;\n});\n//# sourceMappingURL=index.js.map\n\n//# sourceURL=webpack:///./node_modules/proptypes/index.js?");
+
+/***/ }),
+
 /***/ "./node_modules/react-dom/cjs/react-dom.development.js":
 /*!*************************************************************!*\
   !*** ./node_modules/react-dom/cjs/react-dom.development.js ***!
@@ -1098,7 +456,7 @@ eval("\n/**\n * When source maps are enabled, `style-loader` uses a link element
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-eval("\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _reactDom = __webpack_require__(/*! react-dom */ \"./node_modules/react-dom/index.js\");\n\nvar _reactDom2 = _interopRequireDefault(_reactDom);\n\nvar _App = __webpack_require__(/*! ./App.scss */ \"./src/App.scss\");\n\nvar _App2 = _interopRequireDefault(_App);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar App = function App() {\n    return _react2.default.createElement(\n        'div',\n        { className: _App2.default['app'] },\n        'It works!'\n    );\n};\n\n_reactDom2.default.render(_react2.default.createElement(App, null), document.getElementById('root'));\n\n//# sourceURL=webpack:///./src/App.js?");
+eval("\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _reactDom = __webpack_require__(/*! react-dom */ \"./node_modules/react-dom/index.js\");\n\nvar _reactDom2 = _interopRequireDefault(_reactDom);\n\nvar _App = __webpack_require__(/*! ./App.scss */ \"./src/App.scss\");\n\nvar _App2 = _interopRequireDefault(_App);\n\nvar _views = __webpack_require__(/*! ./views/ */ \"./src/views/index.js\");\n\nvar _ContextApi = __webpack_require__(/*! ./ContextApi */ \"./src/ContextApi.js\");\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar App = function App() {\n    return _react2.default.createElement(\n        _ContextApi.Provider,\n        null,\n        _react2.default.createElement(\n            'div',\n            { className: _App2.default['app'] },\n            _react2.default.createElement('div', { className: _App2.default['sidebar'] }),\n            _react2.default.createElement(\n                'div',\n                { className: _App2.default['content'] },\n                _react2.default.createElement(_views.HomeView, null)\n            )\n        )\n    );\n};\n\n_reactDom2.default.render(_react2.default.createElement(App, null), document.getElementById('root'));\n\n//# sourceURL=webpack:///./src/App.js?");
 
 /***/ }),
 
@@ -1109,7 +467,179 @@ eval("\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/i
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("\nvar content = __webpack_require__(/*! !../node_modules/css-loader??ref--5-1!../node_modules/sass-loader/lib/loader.js!./App.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/App.scss\");\n\nif(typeof content === 'string') content = [[module.i, content, '']];\n\nvar transform;\nvar insertInto;\n\n\n\nvar options = {\"hmr\":true}\n\noptions.transform = transform\noptions.insertInto = undefined;\n\nvar update = __webpack_require__(/*! ../node_modules/style-loader/lib/addStyles.js */ \"./node_modules/style-loader/lib/addStyles.js\")(content, options);\n\nif(content.locals) module.exports = content.locals;\n\nif(true) {\n\tmodule.hot.accept(/*! !../node_modules/css-loader??ref--5-1!../node_modules/sass-loader/lib/loader.js!./App.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/App.scss\", function() {\n\t\tvar newContent = __webpack_require__(/*! !../node_modules/css-loader??ref--5-1!../node_modules/sass-loader/lib/loader.js!./App.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/App.scss\");\n\n\t\tif(typeof newContent === 'string') newContent = [[module.i, newContent, '']];\n\n\t\tvar locals = (function(a, b) {\n\t\t\tvar key, idx = 0;\n\n\t\t\tfor(key in a) {\n\t\t\t\tif(!b || a[key] !== b[key]) return false;\n\t\t\t\tidx++;\n\t\t\t}\n\n\t\t\tfor(key in b) idx--;\n\n\t\t\treturn idx === 0;\n\t\t}(content.locals, newContent.locals));\n\n\t\tif(!locals) throw new Error('Aborting CSS HMR due to changed css-modules locals.');\n\n\t\tupdate(newContent);\n\t});\n\n\tmodule.hot.dispose(function() { update(); });\n}\n\n//# sourceURL=webpack:///./src/App.scss?");
+eval("\nvar content = __webpack_require__(/*! !../node_modules/css-loader??ref--6-1!../node_modules/sass-loader/lib/loader.js!./App.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/App.scss\");\n\nif(typeof content === 'string') content = [[module.i, content, '']];\n\nvar transform;\nvar insertInto;\n\n\n\nvar options = {\"hmr\":true}\n\noptions.transform = transform\noptions.insertInto = undefined;\n\nvar update = __webpack_require__(/*! ../node_modules/style-loader/lib/addStyles.js */ \"./node_modules/style-loader/lib/addStyles.js\")(content, options);\n\nif(content.locals) module.exports = content.locals;\n\nif(false) {}\n\n//# sourceURL=webpack:///./src/App.scss?");
+
+/***/ }),
+
+/***/ "./src/ContextApi.js":
+/*!***************************!*\
+  !*** ./src/ContextApi.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.Consumer = exports.Provider = undefined;\n\nvar _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if (\"value\" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nfunction _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError(\"Cannot call a class as a function\"); } }\n\nfunction _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\"); } return call && (typeof call === \"object\" || typeof call === \"function\") ? call : self; }\n\nfunction _inherits(subClass, superClass) { if (typeof superClass !== \"function\" && superClass !== null) { throw new TypeError(\"Super expression must either be null or a function, not \" + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }\n\nvar Context = _react2.default.createContext('asdd');\n\nvar Provider = exports.Provider = function (_Component) {\n    _inherits(Provider, _Component);\n\n    _createClass(Provider, [{\n        key: 'actions',\n        get: function get() {\n            return {\n                setVideoUrl: this.setVideoUrl\n            };\n        }\n    }]);\n\n    function Provider(props) {\n        _classCallCheck(this, Provider);\n\n        var _this = _possibleConstructorReturn(this, (Provider.__proto__ || Object.getPrototypeOf(Provider)).call(this, props));\n\n        _this.state = {};\n\n        _this.setVideoUrl = _this.setVideoUrl.bind(_this);\n        return _this;\n    }\n\n    _createClass(Provider, [{\n        key: 'setVideoUrl',\n        value: function setVideoUrl(videoUrl) {\n            console.log(videoUrl);\n            this.setState({ videoUrl: videoUrl });\n        }\n    }, {\n        key: 'render',\n        value: function render() {\n\n            return _react2.default.createElement(\n                Context.Provider,\n                { value: { state: this.state, actions: this.actions } },\n                this.props.children\n            );\n        }\n    }]);\n\n    return Provider;\n}(_react.Component);\n\nvar Consumer = exports.Consumer = Context.Consumer;\n\n//# sourceURL=webpack:///./src/ContextApi.js?");
+
+/***/ }),
+
+/***/ "./src/components/Input/Input.js":
+/*!***************************************!*\
+  !*** ./src/components/Input/Input.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _proptypes = __webpack_require__(/*! proptypes */ \"./node_modules/proptypes/index.js\");\n\nvar _proptypes2 = _interopRequireDefault(_proptypes);\n\nvar _classnames = __webpack_require__(/*! classnames */ \"./node_modules/classnames/index.js\");\n\nvar _classnames2 = _interopRequireDefault(_classnames);\n\nvar _Input = __webpack_require__(/*! ./Input.scss */ \"./src/components/Input/Input.scss\");\n\nvar _Input2 = _interopRequireDefault(_Input);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar Input = function Input(_ref) {\n    var onChange = _ref.onChange,\n        onKeyUp = _ref.onKeyUp,\n        className = _ref.className,\n        placeholder = _ref.placeholder;\n\n    return _react2.default.createElement('input', {\n        type: 'text',\n        className: (0, _classnames2.default)(_Input2.default['input'], className),\n        onChange: onChange,\n        onKeyUp: onKeyUp,\n        placeholder: placeholder\n    });\n};\n\nInput.propTypes = {\n    onChange: _proptypes2.default.func,\n    onKeyUp: _proptypes2.default.func,\n    className: _proptypes2.default.string,\n    placeholder: _proptypes2.default.string\n};\n\nexports.default = Input;\n\n//# sourceURL=webpack:///./src/components/Input/Input.js?");
+
+/***/ }),
+
+/***/ "./src/components/Input/Input.scss":
+/*!*****************************************!*\
+  !*** ./src/components/Input/Input.scss ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("\nvar content = __webpack_require__(/*! !../../../node_modules/css-loader??ref--6-1!../../../node_modules/sass-loader/lib/loader.js!./Input.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/components/Input/Input.scss\");\n\nif(typeof content === 'string') content = [[module.i, content, '']];\n\nvar transform;\nvar insertInto;\n\n\n\nvar options = {\"hmr\":true}\n\noptions.transform = transform\noptions.insertInto = undefined;\n\nvar update = __webpack_require__(/*! ../../../node_modules/style-loader/lib/addStyles.js */ \"./node_modules/style-loader/lib/addStyles.js\")(content, options);\n\nif(content.locals) module.exports = content.locals;\n\nif(false) {}\n\n//# sourceURL=webpack:///./src/components/Input/Input.scss?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/Logo.js":
+/*!*************************************!*\
+  !*** ./src/components/Logo/Logo.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _proptypes = __webpack_require__(/*! proptypes */ \"./node_modules/proptypes/index.js\");\n\nvar _proptypes2 = _interopRequireDefault(_proptypes);\n\nvar _classnames = __webpack_require__(/*! classnames */ \"./node_modules/classnames/index.js\");\n\nvar _classnames2 = _interopRequireDefault(_classnames);\n\nvar _Logo = __webpack_require__(/*! ./Logo.scss */ \"./src/components/Logo/Logo.scss\");\n\nvar _Logo2 = _interopRequireDefault(_Logo);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar Logo = function Logo(_ref) {\n    var name = _ref.name,\n        className = _ref.className,\n        size = _ref.size;\n\n    return _react2.default.createElement('div', {\n        className: (0, _classnames2.default)(_Logo2.default['logo'], _Logo2.default[name], _Logo2.default[size], className) });\n};\n\nLogo.propTypes = {\n    className: _proptypes2.default.string,\n    size: _proptypes2.default.string,\n    name: _proptypes2.default.oneOf(['youtube', 'vimeo', 'youtube-dark', 'vimeo-dark', 'rutube']).isRequired\n};\n\nexports.default = Logo;\n\n//# sourceURL=webpack:///./src/components/Logo/Logo.js?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/Logo.scss":
+/*!***************************************!*\
+  !*** ./src/components/Logo/Logo.scss ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("\nvar content = __webpack_require__(/*! !../../../node_modules/css-loader??ref--6-1!../../../node_modules/sass-loader/lib/loader.js!./Logo.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/components/Logo/Logo.scss\");\n\nif(typeof content === 'string') content = [[module.i, content, '']];\n\nvar transform;\nvar insertInto;\n\n\n\nvar options = {\"hmr\":true}\n\noptions.transform = transform\noptions.insertInto = undefined;\n\nvar update = __webpack_require__(/*! ../../../node_modules/style-loader/lib/addStyles.js */ \"./node_modules/style-loader/lib/addStyles.js\")(content, options);\n\nif(content.locals) module.exports = content.locals;\n\nif(false) {}\n\n//# sourceURL=webpack:///./src/components/Logo/Logo.scss?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/assets/rutube.svg":
+/*!***********************************************!*\
+  !*** ./src/components/Logo/assets/rutube.svg ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"src/components/Logo/assets/rutube.svg\";\n\n//# sourceURL=webpack:///./src/components/Logo/assets/rutube.svg?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/assets/vimeo-dark.svg":
+/*!***************************************************!*\
+  !*** ./src/components/Logo/assets/vimeo-dark.svg ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"src/components/Logo/assets/vimeo-dark.svg\";\n\n//# sourceURL=webpack:///./src/components/Logo/assets/vimeo-dark.svg?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/assets/vimeo.svg":
+/*!**********************************************!*\
+  !*** ./src/components/Logo/assets/vimeo.svg ***!
+  \**********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"src/components/Logo/assets/vimeo.svg\";\n\n//# sourceURL=webpack:///./src/components/Logo/assets/vimeo.svg?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/assets/youtube-dark.svg":
+/*!*****************************************************!*\
+  !*** ./src/components/Logo/assets/youtube-dark.svg ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"src/components/Logo/assets/youtube-dark.svg\";\n\n//# sourceURL=webpack:///./src/components/Logo/assets/youtube-dark.svg?");
+
+/***/ }),
+
+/***/ "./src/components/Logo/assets/youtube.svg":
+/*!************************************************!*\
+  !*** ./src/components/Logo/assets/youtube.svg ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("module.exports = __webpack_require__.p + \"src/components/Logo/assets/youtube.svg\";\n\n//# sourceURL=webpack:///./src/components/Logo/assets/youtube.svg?");
+
+/***/ }),
+
+/***/ "./src/components/index.js":
+/*!*********************************!*\
+  !*** ./src/components/index.js ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.Logo = exports.Input = undefined;\n\nvar _Input = __webpack_require__(/*! ./Input/Input */ \"./src/components/Input/Input.js\");\n\nvar _Input2 = _interopRequireDefault(_Input);\n\nvar _Logo = __webpack_require__(/*! ./Logo/Logo */ \"./src/components/Logo/Logo.js\");\n\nvar _Logo2 = _interopRequireDefault(_Logo);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nexports.Input = _Input2.default;\nexports.Logo = _Logo2.default;\n\n//# sourceURL=webpack:///./src/components/index.js?");
+
+/***/ }),
+
+/***/ "./src/views/Home/Home.js":
+/*!********************************!*\
+  !*** ./src/views/Home/Home.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\n\nvar _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if (\"value\" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _proptypes = __webpack_require__(/*! proptypes */ \"./node_modules/proptypes/index.js\");\n\nvar _proptypes2 = _interopRequireDefault(_proptypes);\n\nvar _components = __webpack_require__(/*! ../../components/ */ \"./src/components/index.js\");\n\nvar _Home = __webpack_require__(/*! ./Home.scss */ \"./src/views/Home/Home.scss\");\n\nvar _Home2 = _interopRequireDefault(_Home);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nfunction _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError(\"Cannot call a class as a function\"); } }\n\nfunction _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\"); } return call && (typeof call === \"object\" || typeof call === \"function\") ? call : self; }\n\nfunction _inherits(subClass, superClass) { if (typeof superClass !== \"function\" && superClass !== null) { throw new TypeError(\"Super expression must either be null or a function, not \" + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }\n\nvar HomeView = function (_PureComponent) {\n    _inherits(HomeView, _PureComponent);\n\n    function HomeView(props) {\n        _classCallCheck(this, HomeView);\n\n        var _this = _possibleConstructorReturn(this, (HomeView.__proto__ || Object.getPrototypeOf(HomeView)).call(this, props));\n\n        _this.onInputKeyUp = _this.onInputKeyUp.bind(_this);\n        _this.onInputChange = _this.onInputChange.bind(_this);\n        return _this;\n    }\n\n    _createClass(HomeView, [{\n        key: 'onInputKeyUp',\n        value: function onInputKeyUp(event) {\n            var isEnterKeyPressed = event.keyCode === 13;\n\n            if (isEnterKeyPressed) {\n                this.props.setVideoUrl(event.target.value);\n            }\n        }\n    }, {\n        key: 'onInputChange',\n        value: function onInputChange(event) {\n            if (event.target.value.length > 0) {\n                console.log(event.target.value);\n            }\n        }\n    }, {\n        key: 'render',\n        value: function render() {\n            return _react2.default.createElement(\n                'div',\n                { className: _Home2.default['home-view'] },\n                _react2.default.createElement(\n                    'div',\n                    { className: _Home2.default['logos'] },\n                    _react2.default.createElement(_components.Logo, { name: 'youtube-dark', className: _Home2.default['logo'], size: 'small' }),\n                    _react2.default.createElement(_components.Logo, { name: 'vimeo-dark', className: _Home2.default['logo'], size: 'small' }),\n                    _react2.default.createElement(_components.Logo, { name: 'rutube', className: _Home2.default['logo'], size: 'small' })\n                ),\n                _react2.default.createElement(_components.Input, {\n                    onKeyUp: this.onInputKeyUp,\n                    onChange: this.onInputChange,\n                    className: _Home2.default['input'],\n                    placeholder: 'Enter video link'\n                })\n            );\n        }\n    }]);\n\n    return HomeView;\n}(_react.PureComponent);\n\nHomeView.propTypes = {\n    setVideoUrl: _proptypes2.default.func.isRequired\n};\n\nexports.default = HomeView;\n\n//# sourceURL=webpack:///./src/views/Home/Home.js?");
+
+/***/ }),
+
+/***/ "./src/views/Home/Home.scss":
+/*!**********************************!*\
+  !*** ./src/views/Home/Home.scss ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+eval("\nvar content = __webpack_require__(/*! !../../../node_modules/css-loader??ref--6-1!../../../node_modules/sass-loader/lib/loader.js!./Home.scss */ \"./node_modules/css-loader/index.js?!./node_modules/sass-loader/lib/loader.js!./src/views/Home/Home.scss\");\n\nif(typeof content === 'string') content = [[module.i, content, '']];\n\nvar transform;\nvar insertInto;\n\n\n\nvar options = {\"hmr\":true}\n\noptions.transform = transform\noptions.insertInto = undefined;\n\nvar update = __webpack_require__(/*! ../../../node_modules/style-loader/lib/addStyles.js */ \"./node_modules/style-loader/lib/addStyles.js\")(content, options);\n\nif(content.locals) module.exports = content.locals;\n\nif(false) {}\n\n//# sourceURL=webpack:///./src/views/Home/Home.scss?");
+
+/***/ }),
+
+/***/ "./src/views/Home/index.js":
+/*!*********************************!*\
+  !*** ./src/views/Home/index.js ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\n\nvar _react = __webpack_require__(/*! react */ \"./node_modules/react/index.js\");\n\nvar _react2 = _interopRequireDefault(_react);\n\nvar _ContextApi = __webpack_require__(/*! ../../ContextApi */ \"./src/ContextApi.js\");\n\nvar _Home = __webpack_require__(/*! ./Home */ \"./src/views/Home/Home.js\");\n\nvar _Home2 = _interopRequireDefault(_Home);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar HomeViewContainer = function HomeViewContainer(props) {\n    return _react2.default.createElement(\n        _ContextApi.Consumer,\n        null,\n        function (_ref) {\n            var actions = _ref.actions;\n\n            return _react2.default.createElement(_Home2.default, { setVideoUrl: actions.setVideoUrl });\n        }\n    );\n};\n\nexports.default = HomeViewContainer;\n\n//# sourceURL=webpack:///./src/views/Home/index.js?");
+
+/***/ }),
+
+/***/ "./src/views/index.js":
+/*!****************************!*\
+  !*** ./src/views/index.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.HomeView = undefined;\n\nvar _Home = __webpack_require__(/*! ./Home/ */ \"./src/views/Home/index.js\");\n\nvar _Home2 = _interopRequireDefault(_Home);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nexports.HomeView = _Home2.default;\n\n//# sourceURL=webpack:///./src/views/index.js?");
 
 /***/ })
 

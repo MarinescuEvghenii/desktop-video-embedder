@@ -14,8 +14,8 @@ function createWindow () {
     mainWindow = new BrowserWindow({
         width  : windowWidth,
         height : windowHeight,
-        frame  : true,
-        transparent: false,
+        frame  : false,
+        transparent: true,
     });
 
     mainWindow.setAspectRatio(windowWidth/windowHeight);

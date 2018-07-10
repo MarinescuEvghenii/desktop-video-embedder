@@ -1,3 +1,27 @@
 .app {
-    display: block;
+    display: flex;
+    height: 100%;
+    background-color: rgba(#000, 0.4);
+
+    &:hover {
+        .sidebar {
+            width: 50px;
+        }
+    }
+}
+
+.sidebar {
+    width: 0;
+    height: 100%;
+    overflow: hidden;
+    transition: 0.3s width;
+    -webkit-app-region: drag;  
+    cursor: move; 
+}
+
+.content {
+    flex: 1;
+    height: 100%;
+    background-color: #fefefe;
+    border-radius: 4px 0 0 4px;
 }

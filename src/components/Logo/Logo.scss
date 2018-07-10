@@ -1,0 +1,32 @@
+.logo {
+    width: 148px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    &.youtube {
+        background-image: url('./assets/youtube.svg');
+    }
+
+    &.vimeo {
+        background-image: url('./assets/vimeo.svg');
+    }
+
+    &.youtube-dark {
+        background-image: url('./assets/youtube-dark.svg');
+    }
+
+    &.vimeo-dark {
+        background-image: url('./assets/vimeo-dark.svg');
+    }
+
+    &.rutube {
+        background-image: url('./assets/rutube.svg');
+    }
+
+    &.small {
+        width: 80px;
+        height: 20px;
+    }
+}
