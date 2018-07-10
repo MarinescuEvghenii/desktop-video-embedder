@@ -14,7 +14,8 @@ function createWindow () {
     mainWindow = new BrowserWindow({
         width  : windowWidth,
         height : windowHeight,
-        frame  : false
+        frame  : true,
+        transparent: false,
     });
 
     mainWindow.setAspectRatio(windowWidth/windowHeight);
@@ -27,7 +28,7 @@ function createWindow () {
         mainWindow = null
     });
 
-    require('./menu.js');
+    // require('./menu.js');
 }
 
 // This method will be called when Electron has finished

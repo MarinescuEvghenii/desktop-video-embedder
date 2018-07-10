@@ -3,7 +3,6 @@ html, body, #container {
     margin: 0;
     height: 100%;
     font: 13px/1.4 "Arial";
-    -webkit-app-region: drag;
 }
 
 .video-container {
@@ -45,4 +44,33 @@ html, body, #container {
     background-position: center;
     background-image: url('../images/logo/youtube.svg');
     margin-bottom: 20px;
+}
+
+.wrapper,
+.container,
+.sidebar {
+    height: 100%;
+}
+
+.wrapper {
+    position: relative;
+}
+
+.sidebar {
+    position: absolute;
+    width: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    background-color: #e74c3c;
+    -webkit-app-region: drag;
+    transition: 0.3s width;
+}
+
+.container {
+    flex: 1;
+}
+
+.wrapper:hover .sidebar{
+    width: 50px;
 }
