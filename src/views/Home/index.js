@@ -1,19 +1,14 @@
 import React from 'react';
-import {Consumer} from '../../ContextApi';
 import HomeView from './Home';
+import {connect} from 'react-redux';
+import {setVideoURL} from '../../store/video/actions';
 
-const HomeViewContainer = (props) => {
-    return (
-        <Consumer>
-            {
-                ({actions}) => {
-                    return (
-                        <HomeView setVideoUrl={actions.setVideoUrl} />
-                    )
-                }
-            }
-        </Consumer>
-    )
-};
+const mapStateToProps = (state) => ({
+    video : state.video
+})
 
-export default HomeViewContainer;
+const mapDispatchToProps = (dispatch) => ({
+    setVideoURL: (url) => dispatch(setVideoURL(url))
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(HomeView);

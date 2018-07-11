@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import styles from './App.scss';
+import {Provider} from 'react-redux'
 import {HomeView} from './views/';
-import {Provider} from './ContextApi';
+import store from './store';
+import styles from './App.scss';
 
 const App = () => {
     return (
-        <Provider>
+        <Provider store={store}>
             <div className={styles['app']}>
                 <div className={styles['sidebar']}></div>
                 <div className={styles['content']}>

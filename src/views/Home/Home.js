@@ -15,7 +15,7 @@ class HomeView extends PureComponent {
         const isEnterKeyPressed = event.keyCode === 13;
 
         if(isEnterKeyPressed) {
-            this.props.setVideoUrl(event.target.value);
+            this.props.setVideoURL(event.target.value);
         }
     }
 
@@ -33,8 +33,8 @@ class HomeView extends PureComponent {
                     <Logo name="vimeo-dark" className={styles['logo']} size="small" />
                     <Logo name="rutube" className={styles['logo']} size="small" />
                 </div>
-                
-                <Input 
+
+                <Input
                     onKeyUp={this.onInputKeyUp}
                     onChange={this.onInputChange}
                     className={styles['input']}
@@ -46,7 +46,7 @@ class HomeView extends PureComponent {
 }
 
 HomeView.propTypes = {
-    setVideoUrl : PropTypes.func.isRequired
+    setVideoURL : PropTypes.func.isRequired
 }
 
 export default HomeView;
