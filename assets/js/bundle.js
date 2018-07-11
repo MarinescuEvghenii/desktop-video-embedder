@@ -989,18 +989,6 @@ eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});
 
 /***/ }),
 
-/***/ "./src/services/localStorage.js":
-/*!**************************************!*\
-  !*** ./src/services/localStorage.js ***!
-  \**************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.removeItem = exports.getItem = exports.setItem = undefined;\n\nvar _logger = __webpack_require__(/*! ../utils/logger */ \"./src/utils/logger.js\");\n\nvar KEY_PRFIX = 'app-storage-';\n\nvar isLocalStorageAvailable = null;\n\nvar checkLocalStorageAvailability = function checkLocalStorageAvailability() {\n\n    if (isLocalStorageAvailable === null) {\n        try {\n            localStorage.setItem(KEY_PRFIX + 'test', '1');\n            localStorage.removeItem(KEY_PRFIX + 'test');\n\n            isLocalStorageAvailable = true;\n        } catch (err) {\n            (0, _logger.error)(err);\n            isLocalStorageAvailable = false;\n        }\n    }\n\n    return isLocalStorageAvailable;\n};\n\nvar setItem = exports.setItem = function setItem(key, value) {\n    if (checkLocalStorageAvailability()) {\n        localStorage.setItem(KEY_PRFIX + key, JSON.stringify(value));\n\n        return value;\n    }\n\n    return null;\n};\n\nvar getItem = exports.getItem = function getItem(key) {\n    if (checkLocalStorageAvailability()) {\n        return JSON.parse(localStorage.getItem(KEY_PRFIX + key));\n    }\n\n    return null;\n};\n\nvar removeItem = exports.removeItem = function removeItem(key) {\n    if (checkLocalStorageAvailability()) {\n        var value = getItem(KEY_PRFIX + key);\n        localStorage.removeItem(KEY_PRFIX + key);\n\n        return value;\n    }\n\n    return null;\n};\n\n//# sourceURL=webpack:///./src/services/localStorage.js?");
-
-/***/ }),
-
 /***/ "./src/store/index.js":
 /*!****************************!*\
   !*** ./src/store/index.js ***!
@@ -1045,7 +1033,7 @@ eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.parseVideoURL = undefined;\n\nvar _actionTypes = __webpack_require__(/*! ./actionTypes */ \"./src/store/video/actionTypes.js\");\n\nvar _actionTypes2 = _interopRequireDefault(_actionTypes);\n\nvar _parseVideoUrl2 = __webpack_require__(/*! ../../utils/parseVideoUrl */ \"./src/utils/parseVideoUrl.js\");\n\nvar _localStorage = __webpack_require__(/*! ../../services/localStorage */ \"./src/services/localStorage.js\");\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar parseVideoURL = exports.parseVideoURL = function parseVideoURL(store) {\n    return function (next) {\n        return function (action) {\n            if (action.type === _actionTypes2.default.SET_VIDEO_URL) {\n                var _parseVideoUrl = (0, _parseVideoUrl2.parseVideoUrl)(action.url),\n                    videoId = _parseVideoUrl.videoId,\n                    hostname = _parseVideoUrl.hostname;\n\n                action.videoId = videoId;\n                action.hostname = hostname;\n\n                console.log((0, _localStorage.setItem)('video-url', action));\n            }\n\n            next(action);\n        };\n    };\n};\n\n//# sourceURL=webpack:///./src/store/video/middlewares.js?");
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.parseVideoURL = undefined;\n\nvar _actionTypes = __webpack_require__(/*! ./actionTypes */ \"./src/store/video/actionTypes.js\");\n\nvar _actionTypes2 = _interopRequireDefault(_actionTypes);\n\nvar _parseVideoUrl2 = __webpack_require__(/*! ../../utils/parseVideoUrl */ \"./src/utils/parseVideoUrl.js\");\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar parseVideoURL = exports.parseVideoURL = function parseVideoURL(store) {\n    return function (next) {\n        return function (action) {\n            if (action.type === _actionTypes2.default.SET_VIDEO_URL) {\n                var _parseVideoUrl = (0, _parseVideoUrl2.parseVideoUrl)(action.url),\n                    videoId = _parseVideoUrl.videoId,\n                    hostname = _parseVideoUrl.hostname;\n\n                action.videoId = videoId;\n                action.hostname = hostname;\n            }\n\n            next(action);\n        };\n    };\n};\n\n//# sourceURL=webpack:///./src/store/video/middlewares.js?");
 
 /***/ }),
 
@@ -1058,18 +1046,6 @@ eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});
 
 "use strict";
 eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nexports.video = undefined;\n\nvar _actionTypes = __webpack_require__(/*! ./actionTypes */ \"./src/store/video/actionTypes.js\");\n\nvar _actionTypes2 = _interopRequireDefault(_actionTypes);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nvar initState = {\n    url: '',\n    videoId: '',\n    hostname: ''\n};\n\nvar video = exports.video = function video() {\n    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initState;\n    var action = arguments[1];\n\n    switch (action.type) {\n        case _actionTypes2.default.SET_VIDEO_URL:\n            return Object.assign({}, state, {\n                url: action.url,\n                videoId: action.videoId,\n                hostname: action.type\n            });\n\n        default:\n            return state;\n    }\n};\n\n//# sourceURL=webpack:///./src/store/video/reducers.js?");
-
-/***/ }),
-
-/***/ "./src/utils/logger.js":
-/*!*****************************!*\
-  !*** ./src/utils/logger.js ***!
-  \*****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n    value: true\n});\nvar enabled = true;\n\nvar log = exports.log = function log() {\n    var _console;\n\n    return enabled && (_console = console).log.apply(_console, arguments);\n};\n\nvar error = exports.error = function error() {\n    var _console2;\n\n    return enabled && (_console2 = console).error.apply(_console2, arguments);\n};\n\nvar warn = exports.warn = function warn() {\n    var _console3;\n\n    return enabled && (_console3 = console).warn.apply(_console3, arguments);\n};\n\n//# sourceURL=webpack:///./src/utils/logger.js?");
 
 /***/ }),
 

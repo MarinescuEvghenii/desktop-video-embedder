@@ -11,3 +11,5 @@ export const error = (...args) => {
 export const warn = (...args) => {
     return enabled && console.warn(...args);
 }
+
+export default {log, error, warn}

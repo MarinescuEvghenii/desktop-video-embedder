@@ -1,4 +1,4 @@
-import {error} from '../utils/logger';
+import logger from '../utils/logger';
 
 const KEY_PRFIX = 'app-storage-';
 
@@ -10,11 +10,10 @@ const checkLocalStorageAvailability = () => {
         try {
             localStorage.setItem(KEY_PRFIX + 'test', '1');
             localStorage.removeItem(KEY_PRFIX + 'test');
-            
             isLocalStorageAvailable = true;
         } 
         catch (err) {
-            error(err);
+            logger.error(err);
             isLocalStorageAvailable = false;
         } 
     }
@@ -50,3 +49,5 @@ export const removeItem = (key) => {
 
     return null;
 }
+
+export default {removeItem, getItem, setItem}

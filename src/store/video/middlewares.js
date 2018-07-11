@@ -1,6 +1,5 @@
 import actionTypes from './actionTypes';
 import {parseVideoUrl} from '../../utils/parseVideoUrl';
-import {setItem} from '../../services/localStorage';
 
 export const parseVideoURL = (store) => (next) => (action) => {
     if(action.type === actionTypes.SET_VIDEO_URL) {
@@ -8,8 +7,6 @@ export const parseVideoURL = (store) => (next) => (action) => {
         
         action.videoId  = videoId;
         action.hostname = hostname;
-
-        console.log(setItem('video-url', action));
     }
 
     next(action);
