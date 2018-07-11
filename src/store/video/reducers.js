@@ -2,20 +2,18 @@ import actionTypes from './actionTypes';
 
 const initState = {
     url      : '',
-    id       : '',
-    provider : ''
+    videoId  : '',
+    hostname : ''
 };
 
 export const video = (state = initState, action) => {
     switch (action.type) {
         case actionTypes.SET_VIDEO_URL:
-            return Object.assign({}, state, {url : action.url});
-
-        case actionTypes.SET_VIDEO_ID:
-            return Object.assign({}, state, {id : action.id});
-
-        case actionTypes.SET_VIDEO_PROVIDER:
-            return Object.assign({}, state, {provider : action.provider});
+            return Object.assign({}, state, {
+                url      : action.url,
+                videoId  : action.videoId,
+                hostname : action.type
+            });
 
         default:
             return state;

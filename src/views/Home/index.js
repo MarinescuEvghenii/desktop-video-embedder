@@ -1,4 +1,3 @@
-import React from 'react';
 import HomeView from './Home';
 import {connect} from 'react-redux';
 import {setVideoURL} from '../../store/video/actions';

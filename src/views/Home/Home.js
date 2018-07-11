@@ -21,7 +21,7 @@ class HomeView extends PureComponent {
 
     onInputChange(event) {
         if(event.target.value.length > 0) {
-            console.log(event.target.value);
+            //console.log(event.target.value);
         }
     }
 
