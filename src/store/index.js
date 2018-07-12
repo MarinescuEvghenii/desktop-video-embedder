@@ -3,14 +3,14 @@ import {composeWithDevTools} from 'redux-devtools-extension';
 import {video} from './video/reducers';
 import videoMiddlewares from './video/middlewares';
 
-const reducers = combineReducers({
-  video
-})
+const reducers = {
+    video
+}
 
 const middlewares = [
     videoMiddlewares
 ];
 
-const store = createStore(reducers, composeWithDevTools(...middlewares));
+const store = createStore(combineReducers(reducers), composeWithDevTools(...middlewares));
 
 export default store;
