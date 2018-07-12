@@ -12,7 +12,7 @@ export const video = (state = initState, action) => {
             return Object.assign({}, state, {
                 url      : action.url,
                 videoId  : action.videoId,
-                hostname : action.type
+                hostname : action.hostname
             });
 
         default:

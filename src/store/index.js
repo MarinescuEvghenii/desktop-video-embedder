@@ -1,15 +1,16 @@
-import {createStore, combineReducers, applyMiddleware} from 'redux';
+import {createStore, combineReducers} from 'redux';
+import {composeWithDevTools} from 'redux-devtools-extension';
 import {video} from './video/reducers';
-import {parseVideoURL} from './video/middlewares';
+import videoMiddlewares from './video/middlewares';
 
 const reducers = combineReducers({
   video
 })
 
-const middlewares = applyMiddleware(
-  parseVideoURL
-);
+const middlewares = [
+    videoMiddlewares
+];
 
-const store = createStore(reducers, middlewares);
+const store = createStore(reducers, composeWithDevTools(...middlewares));
 
 export default store;
