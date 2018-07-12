@@ -4,10 +4,10 @@ import classNames from 'classnames';
 import styles     from './Input.scss';
 
 const Input = ({onChange, onKeyUp, className, placeholder}) => {
-    return <input 
+    return <input
                 type="text" 
-                className={classNames(styles['input'], className)} 
-                onChange={onChange} 
+                className={classNames(styles['input'], className)}
+                onChange={onChange}
                 onKeyUp={onKeyUp}
                 placeholder={placeholder}
             />
