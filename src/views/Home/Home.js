@@ -15,7 +15,7 @@ class HomeView extends PureComponent {
         const isEnterKeyPressed = event.keyCode === 13;
 
         if(isEnterKeyPressed) {
-            this.props.setVideoURL(event.target.value);
+            this.props.setVideoUrl(event.target.value);
         }
     }
 
@@ -46,7 +46,7 @@ class HomeView extends PureComponent {
 }
 
 HomeView.propTypes = {
-    setVideoURL : PropTypes.func.isRequired
+    setVideoUrl : PropTypes.func.isRequired
 }
 
 export default HomeView;

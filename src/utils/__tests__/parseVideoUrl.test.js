@@ -1,17 +1,39 @@
 import {parseVideoUrl} from '../parseVideoUrl';
 
-const exampleUrl = "";
+const ids = {
+    youtube : 'gEPmA3USJdI',
+    vimeo   : '141125221'
+};
+
+const urls = {
+    youtube : [
+        `http://www.youtube.com/watch?v=${ids.youtube}`, 
+        `https://www.youtube.com/embed/${ids.youtube}`,
+        `https://youtube.com/watch?v=${ids.youtube}`,
+        `http://youtu.be/${ids.youtube}`
+    ],
+
+    vimeo : [
+        `http://www.vimeo.com/${ids.vimeo}`,
+        // 'https://www.vimeo.com/channels/*/*',
+        // 'http://vimeo.com/groups/*/videos/*'
+    ]
+};
 
 describe('Parse youtube url:', () => {
-    const exampleUrl = 'https://www.youtube.com/watch?v=gEPmA3USJdI';
-
-    test(`Expect videoId to be gEPmA3USJdI.`, () => {
-        const result = parseVideoUrl(exampleUrl);
-        expect(result.videoId).toBe('gEPmA3USJdI');
+    urls.youtube.forEach(url => {
+        test(`Expect videoId to be ${ids.youtube}.`, () => {
+            const result = parseVideoUrl(url);
+            expect(result.videoId).toBe(ids.youtube);
+        });
     });
+});
 
-    test(`Expect hostname to be youtube.com.`, () => {
-        const result = parseVideoUrl(exampleUrl);
-        expect(result.hostname).toBe('youtube.com');
+describe('Parse vimeo url:', () => {
+    urls.vimeo.forEach(url => {
+        test(`Expect videoId to be ${ids.vimeo}.`, () => {
+            const result = parseVideoUrl(url);
+            expect(result.videoId).toBe(ids.vimeo);
+        });
     });
 });
