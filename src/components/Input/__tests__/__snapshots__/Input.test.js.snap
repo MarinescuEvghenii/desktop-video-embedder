@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Input component renders correctly: Expect markup to match snapshot. 1`] = `
+<input
+  className="test-class-name"
+  onChange={[MockFunction]}
+  onKeyUp={[MockFunction]}
+  placeholder="test placeholder"
+  type="text"
+/>
+`;
